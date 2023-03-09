@@ -82,7 +82,7 @@ service / on new http:Listener(9091) {
     # + req - HTTP Request
     # + return - Returns the response from FHIR resource component.
     isolated resource function 'default [string... paths](http:Request req) returns http:Response|http:StatusCodeResponse|error {
-
+        log:printInfo("Paths: " + paths.toString());
         if validateFHIRBasePath(paths) {
             r4:OperationOutcome opOutcome = {
                 issue: [
@@ -102,7 +102,6 @@ service / on new http:Listener(9091) {
         string? resourceEP = serverComponentRoutes[resourceType];
         string resourceCtx = "";
         if resourceEP is string {
-            log:printInfo("Paths: " + paths.toString());
             if resourceEP.startsWith(sourceSystem) {
                 resourceEP = resourceEP.substring(sourceSystem.length());
             }
