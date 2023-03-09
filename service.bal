@@ -75,6 +75,44 @@ service / on new http:Listener(9091) {
         return internalError;
     }
 
+    # Resource for proxying all read/search interactions of FHIR resources. 
+    # This resource will be secured endpoint as all the FHIR resources needs to be secured.
+    #
+    # + paths - Path parameters 
+    # + req - HTTP Request
+    # + return - Returns the response from FHIR resource component.
+    isolated resource function get fhir/r4/[string resourceType]/[string... paths](http:Request req) returns http:Response|http:StatusCodeResponse|error {
+        log:printInfo("Paths: " + paths.toString());
+        string? resourceEP = serverComponentRoutes[resourceType];
+        string resourceCtx = "";
+        if resourceEP is string {
+            if resourceEP.startsWith(sourceSystem) {
+                resourceEP = resourceEP.substring(sourceSystem.length());
+            }
+            if paths.length() > 3 {
+                foreach int i in 2 ... paths.length() - 1 {
+                    resourceCtx = string `/${paths[i]}`;
+                }
+            }
+            resourceEP = string `${resourceEP ?: ""}${resourceCtx}`;
+            log:printInfo("Paths: " + <string>resourceEP);
+            http:Response|http:ClientError fhirAPIResponse = sourceEp->forward(<string>resourceEP, req);
+            return fhirAPIResponse;
+        }
+        r4:OperationOutcome opOutcome = {
+            issue: [
+                {
+                    severity: r4:ERROR,
+                    code: r4:PROCESSING,
+                    diagnostics: string `FHIR resource type: ${resourceType} not configured to route the request.`
+                }
+            ]
+        };
+        http:InternalServerError internalError = {
+            body: opOutcome
+        };
+        return internalError;
+    }
 
     # Resource for proxying FHIR resources. This resource will be secured endpoint as all the FHIR resources needs to be secured.
     #
