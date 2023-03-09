@@ -1,4 +1,5 @@
 import ballerina/http;
+import ballerina/log;
 import wso2healthcare/healthcare.fhir.r4;
 
 configurable string sourceSystem = "http://localhost:9090";
@@ -26,6 +27,7 @@ service / on new http:Listener(9091) {
             if metadataEp.startsWith(sourceSystem) {
                 metadataEp = metadataEp.substring(sourceSystem.length());
             }
+            log:printInfo("Metadata endpoint: " + <string>metadataEp);
             http:Response|http:ClientError matadataResponse = sourceEp->forward(<string>metadataEp, req);
             return matadataResponse;
         }
@@ -100,6 +102,7 @@ service / on new http:Listener(9091) {
         string? resourceEP = serverComponentRoutes[resourceType];
         string resourceCtx = "";
         if resourceEP is string {
+            log:printInfo("Paths: " + paths.toString());
             if resourceEP.startsWith(sourceSystem) {
                 resourceEP = resourceEP.substring(sourceSystem.length());
             }
@@ -109,6 +112,7 @@ service / on new http:Listener(9091) {
                 }
             }
             resourceEP = string `${resourceEP ?: ""}${resourceCtx}`;
+            log:printInfo("Paths: " + <string>resourceEP);
             http:Response|http:ClientError fhirAPIResponse = sourceEp->forward(<string>resourceEP, req);
             return fhirAPIResponse;
         }
