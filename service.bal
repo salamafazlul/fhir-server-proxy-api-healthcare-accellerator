@@ -81,9 +81,14 @@ service / on new http:Listener(9091) {
     # + paths - Path parameters 
     # + req - HTTP Request
     # + return - Returns the response from FHIR resource component.
-    isolated resource function get fhir/r4/[string resourceType]/[string... paths](http:Request req) returns http:Response|http:StatusCodeResponse|error {
+    isolated resource function get fhir/r4/[string resourceType]/[string... paths](http:Request req) returns json|http:StatusCodeResponse|error {
         log:printInfo("Paths: " + paths.toString());
         log:printInfo("Resource Type: " + resourceType);
+        log:printInfo(req.getHeaderNames().toJsonString());
+        string[]|http:HeaderNotFoundError headers = req.getHeaders("x-jwt-assertion");
+        if headers is string[] {
+            log:printInfo("JWT: " + headers.toJsonString());
+        }
         string? resourceEP = serverComponentRoutes[resourceType];
         string resourceCtx = "";
         if resourceEP is string {
@@ -97,7 +102,7 @@ service / on new http:Listener(9091) {
             }
             resourceEP = string `${resourceEP ?: ""}${resourceCtx}`;
             log:printInfo("Full path: " + sourceSystem + <string>resourceEP);
-            http:Response|http:ClientError fhirAPIResponse = sourceEp->forward(<string>resourceEP, req);
+            json|http:ClientError fhirAPIResponse = sourceEp->forward(<string>resourceEP, req);
             return fhirAPIResponse;
         }
         r4:OperationOutcome opOutcome = {
