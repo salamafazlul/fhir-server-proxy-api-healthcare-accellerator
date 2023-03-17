@@ -90,13 +90,13 @@ service / on new http:Listener(9091) {
             if resourceEP.startsWith(sourceSystem) {
                 resourceEP = resourceEP.substring(sourceSystem.length());
             }
-            if paths.length() > 3 {
-                foreach int i in 2 ... paths.length() - 1 {
-                    resourceCtx = string `/${paths[i]}`;
+            if paths.length() > 0 {
+                foreach int i in 0 ... paths.length() - 1 {
+                    resourceCtx += string `/${paths[i]}`;
                 }
             }
             resourceEP = string `${resourceEP ?: ""}${resourceCtx}`;
-            log:printInfo("Paths: " + <string>resourceEP);
+            log:printInfo("Full path: " + sourceSystem + <string>resourceEP);
             http:Response|http:ClientError fhirAPIResponse = sourceEp->forward(<string>resourceEP, req);
             return fhirAPIResponse;
         }
@@ -146,11 +146,11 @@ service / on new http:Listener(9091) {
             }
             if paths.length() > 3 {
                 foreach int i in 2 ... paths.length() - 1 {
-                    resourceCtx = string `/${paths[i]}`;
+                    resourceCtx += string `/${paths[i]}`;
                 }
             }
             resourceEP = string `${resourceEP ?: ""}${resourceCtx}`;
-            log:printInfo("Paths Default: " + <string>resourceEP);
+            log:printInfo("Full path: " + sourceSystem + <string>resourceEP);
             http:Response|http:ClientError fhirAPIResponse = sourceEp->forward(<string>resourceEP, req);
             return fhirAPIResponse;
         }
