@@ -1,6 +1,6 @@
 import ballerina/http;
 import ballerina/log;
-import wso2healthcare/healthcare.fhir.r4;
+import ballerinax/health.fhir.r4;
 
 configurable string sourceSystem = "http://localhost:9090";
 configurable map<string> serverComponentRoutes = {
@@ -125,24 +125,9 @@ service / on new http:Listener(9091) {
     # + paths - Path parameters 
     # + req - HTTP Request
     # + return - Returns the response from FHIR resource component.
-    isolated resource function 'default [string... paths](http:Request req) returns http:Response|http:StatusCodeResponse|error {
+    isolated resource function get fhir/r4/[string... paths](http:Request req) returns http:Response|http:StatusCodeResponse|error {
         log:printInfo("Paths Default: " + paths.toString());
-        if validateFHIRBasePath(paths) {
-            r4:OperationOutcome opOutcome = {
-                issue: [
-                    {
-                        severity: r4:ERROR,
-                        code: r4:PROCESSING,
-                        diagnostics: "Invalid FHIR base path."
-                    }
-                ]
-            };
-            http:InternalServerError internalError = {
-                body: opOutcome
-            };
-            return internalError;
-        }
-        string resourceType = paths[2];
+        string resourceType = paths[0];
         string? resourceEP = serverComponentRoutes[resourceType];
         string resourceCtx = "";
         if resourceEP is string {
