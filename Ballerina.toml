@@ -2,7 +2,7 @@
 org = "sameeragunarathne"
 name = "fhir_server_proxy_api_healthcare_accellerator"
 version = "0.1.0"
-distribution = "2201.3.1"
+distribution = "2201.8.4"
 
 [build-options]
 observabilityIncluded = true
