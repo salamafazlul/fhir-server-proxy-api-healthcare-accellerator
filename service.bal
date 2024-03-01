@@ -2,17 +2,14 @@ import ballerina/http;
 import ballerina/log;
 import ballerinax/health.fhir.r4;
 
-configurable string systemServiceUrl = "http://localhost:9090";
 configurable string resourceServiceUrl = "http://localhost:9090";
 configurable map<string> systemComponentRoutes = {
-    "metadata": "/fhir/r4/metadata",
-    "well-known": "/fhir/r4/.well-known/smart-configuration"
+    "metadata": "http://localhost:9090/fhir/r4/metadata",
+    "well-known": "http://localhost:9091/fhir/r4/.well-known/smart-configuration"
 };
 configurable map<string> resourceComponentRoutes = {
     "Patient": "/fhir/r4/Patient"
 };
-
-final http:Client systemServiceEp = check new (systemServiceUrl);
 final http:Client resourceServiceEp = check new (resourceServiceUrl);
 
 # A service representing a network-accessible API
@@ -27,11 +24,9 @@ service / on new http:Listener(9091) {
 
         string? metadataEp = systemComponentRoutes["metadata"];
         if metadataEp is string {
-            if metadataEp.startsWith(systemServiceUrl) {
-                metadataEp = metadataEp.substring(systemServiceUrl.length());
-            }
+            final http:Client metaServiceEp = check new (metadataEp);
             log:printInfo("Metadata endpoint: " + <string>metadataEp);
-            http:Response|http:ClientError matadataResponse = systemServiceEp->forward(<string>metadataEp, req);
+            http:Response|http:ClientError matadataResponse = metaServiceEp->forward(<string>metadataEp, req);
             return matadataResponse;
         }
         r4:OperationOutcome opOutcome = {
@@ -57,10 +52,8 @@ service / on new http:Listener(9091) {
 
         string? wellKnownEp = systemComponentRoutes["well-known"];
         if wellKnownEp is string {
-            if wellKnownEp.startsWith(systemServiceUrl) {
-                wellKnownEp = wellKnownEp.substring(systemServiceUrl.length());
-            }
-            http:Response|http:ClientError wellKnownEPResponse = systemServiceEp->forward(<string>wellKnownEp, req);
+            final http:Client wellKnownServiceEp = check new (wellKnownEp);
+            http:Response|http:ClientError wellKnownEPResponse = wellKnownServiceEp->forward(<string>wellKnownEp, req);
             return wellKnownEPResponse;
         }
         r4:OperationOutcome opOutcome = {
@@ -105,7 +98,7 @@ service / on new http:Listener(9091) {
             }
             resystemServiceEp = string `${resystemServiceEp ?: ""}${resourceCtx}`;
             log:printInfo("Full path: " + resourceServiceUrl + <string>resystemServiceEp);
-            json|http:ClientError fhirAPIResponse = systemServiceEp->forward(<string>resystemServiceEp, req);
+            json|http:ClientError fhirAPIResponse = resourceServiceEp->forward(<string>resystemServiceEp, req);
             return fhirAPIResponse;
         }
         r4:OperationOutcome opOutcome = {
@@ -144,7 +137,7 @@ service / on new http:Listener(9091) {
             }
             resystemServiceEp = string `${resystemServiceEp ?: ""}${resourceCtx}`;
             log:printInfo("Full path: " + resourceServiceUrl + <string>resystemServiceEp);
-            http:Response|http:ClientError fhirAPIResponse = systemServiceEp->forward(<string>resystemServiceEp, req);
+            http:Response|http:ClientError fhirAPIResponse = resourceServiceEp->forward(<string>resystemServiceEp, req);
             return fhirAPIResponse;
         }
         r4:OperationOutcome opOutcome = {
