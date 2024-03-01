@@ -26,8 +26,12 @@ service / on new http:Listener(9091) {
         if metadataEp is string {
             final http:Client metaServiceEp = check new (metadataEp);
             log:printInfo("Metadata endpoint: " + <string>metadataEp);
-            http:Response|http:ClientError matadataResponse = metaServiceEp->forward(<string>metadataEp, req);
-            return matadataResponse;
+            http:Response|http:ClientError metadataResponse = metaServiceEp->forward("", req);
+            if (metadataResponse is http:ClientError) {
+                log:printError("Error occurred while invoking metadata endpoint: ", metadataResponse);
+                return metadataResponse;
+            }
+            return metadataResponse;
         }
         r4:OperationOutcome opOutcome = {
             issue: [
@@ -53,7 +57,7 @@ service / on new http:Listener(9091) {
         string? wellKnownEp = systemComponentRoutes["well-known"];
         if wellKnownEp is string {
             final http:Client wellKnownServiceEp = check new (wellKnownEp);
-            http:Response|http:ClientError wellKnownEPResponse = wellKnownServiceEp->forward(<string>wellKnownEp, req);
+            http:Response|http:ClientError wellKnownEPResponse = wellKnownServiceEp->forward("", req);
             return wellKnownEPResponse;
         }
         r4:OperationOutcome opOutcome = {
