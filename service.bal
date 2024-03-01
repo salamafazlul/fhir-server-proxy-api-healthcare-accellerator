@@ -2,19 +2,22 @@ import ballerina/http;
 import ballerina/log;
 import ballerinax/health.fhir.r4;
 
-configurable string sourceSystem = "http://localhost:9090";
-configurable map<string> serverComponentRoutes = {
-    "Patient": "/fhir/r4/Patient",
+configurable string systemServiceUrl = "http://localhost:9090";
+configurable string resourceServiceUrl = "http://localhost:9090";
+configurable map<string> systemComponentRoutes = {
     "metadata": "/fhir/r4/metadata",
     "well-known": "/fhir/r4/.well-known/smart-configuration"
 };
+configurable map<string> resourceComponentRoutes = {
+    "Patient": "/fhir/r4/Patient"
+};
 
-final http:Client sourceEp = check new (sourceSystem);
+final http:Client systemServiceEp = check new (systemServiceUrl);
+final http:Client resourceServiceEp = check new (resourceServiceUrl);
 
 # A service representing a network-accessible API
 # bound to port `9091`.
 service / on new http:Listener(9091) {
-
 
     # Resource for proxying metadata endpoint. This resource will be unsecured endpoint.
     #
@@ -22,13 +25,13 @@ service / on new http:Listener(9091) {
     # + return - Returns the response from metadata component.
     isolated resource function get fhir/r4/metadata(http:Request req) returns http:Response|http:StatusCodeResponse|error {
 
-        string? metadataEp = serverComponentRoutes["metadata"];
+        string? metadataEp = systemComponentRoutes["metadata"];
         if metadataEp is string {
-            if metadataEp.startsWith(sourceSystem) {
-                metadataEp = metadataEp.substring(sourceSystem.length());
+            if metadataEp.startsWith(systemServiceUrl) {
+                metadataEp = metadataEp.substring(systemServiceUrl.length());
             }
             log:printInfo("Metadata endpoint: " + <string>metadataEp);
-            http:Response|http:ClientError matadataResponse = sourceEp->forward(<string>metadataEp, req);
+            http:Response|http:ClientError matadataResponse = systemServiceEp->forward(<string>metadataEp, req);
             return matadataResponse;
         }
         r4:OperationOutcome opOutcome = {
@@ -52,12 +55,12 @@ service / on new http:Listener(9091) {
     # + return - Returns the response from SMART well-known component.
     isolated resource function get fhir/r4/\.well\-known/smart\-configuration(http:Request req) returns http:Response|http:StatusCodeResponse|error {
 
-        string? wellKnownEp = serverComponentRoutes["well-known"];
+        string? wellKnownEp = systemComponentRoutes["well-known"];
         if wellKnownEp is string {
-            if wellKnownEp.startsWith(sourceSystem) {
-                wellKnownEp = wellKnownEp.substring(sourceSystem.length());
+            if wellKnownEp.startsWith(systemServiceUrl) {
+                wellKnownEp = wellKnownEp.substring(systemServiceUrl.length());
             }
-            http:Response|http:ClientError wellKnownEPResponse = sourceEp->forward(<string>wellKnownEp, req);
+            http:Response|http:ClientError wellKnownEPResponse = systemServiceEp->forward(<string>wellKnownEp, req);
             return wellKnownEPResponse;
         }
         r4:OperationOutcome opOutcome = {
@@ -89,20 +92,20 @@ service / on new http:Listener(9091) {
         if headers is string[] {
             log:printInfo("JWT: " + headers.toJsonString());
         }
-        string? resourceEP = serverComponentRoutes[resourceType];
+        string? resystemServiceEp = resourceComponentRoutes[resourceType];
         string resourceCtx = "";
-        if resourceEP is string {
-            if resourceEP.startsWith(sourceSystem) {
-                resourceEP = resourceEP.substring(sourceSystem.length());
+        if resystemServiceEp is string {
+            if resystemServiceEp.startsWith(resourceServiceUrl) {
+                resystemServiceEp = resystemServiceEp.substring(resourceServiceUrl.length());
             }
             if paths.length() > 0 {
                 foreach int i in 0 ... paths.length() - 1 {
                     resourceCtx += string `/${paths[i]}`;
                 }
             }
-            resourceEP = string `${resourceEP ?: ""}${resourceCtx}`;
-            log:printInfo("Full path: " + sourceSystem + <string>resourceEP);
-            json|http:ClientError fhirAPIResponse = sourceEp->forward(<string>resourceEP, req);
+            resystemServiceEp = string `${resystemServiceEp ?: ""}${resourceCtx}`;
+            log:printInfo("Full path: " + resourceServiceUrl + <string>resystemServiceEp);
+            json|http:ClientError fhirAPIResponse = systemServiceEp->forward(<string>resystemServiceEp, req);
             return fhirAPIResponse;
         }
         r4:OperationOutcome opOutcome = {
@@ -128,20 +131,20 @@ service / on new http:Listener(9091) {
     isolated resource function get fhir/r4/[string... paths](http:Request req) returns http:Response|http:StatusCodeResponse|error {
         log:printInfo("Paths Default: " + paths.toString());
         string resourceType = paths[0];
-        string? resourceEP = serverComponentRoutes[resourceType];
+        string? resystemServiceEp = resourceComponentRoutes[resourceType];
         string resourceCtx = "";
-        if resourceEP is string {
-            if resourceEP.startsWith(sourceSystem) {
-                resourceEP = resourceEP.substring(sourceSystem.length());
+        if resystemServiceEp is string {
+            if resystemServiceEp.startsWith(resourceServiceUrl) {
+                resystemServiceEp = resystemServiceEp.substring(resourceServiceUrl.length());
             }
             if paths.length() > 3 {
                 foreach int i in 2 ... paths.length() - 1 {
                     resourceCtx += string `/${paths[i]}`;
                 }
             }
-            resourceEP = string `${resourceEP ?: ""}${resourceCtx}`;
-            log:printInfo("Full path: " + sourceSystem + <string>resourceEP);
-            http:Response|http:ClientError fhirAPIResponse = sourceEp->forward(<string>resourceEP, req);
+            resystemServiceEp = string `${resystemServiceEp ?: ""}${resourceCtx}`;
+            log:printInfo("Full path: " + resourceServiceUrl + <string>resystemServiceEp);
+            http:Response|http:ClientError fhirAPIResponse = systemServiceEp->forward(<string>resystemServiceEp, req);
             return fhirAPIResponse;
         }
         r4:OperationOutcome opOutcome = {
