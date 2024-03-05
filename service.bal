@@ -129,14 +129,16 @@ service / on new http:Listener(9091) {
         log:printInfo("Paths Default: " + paths.toString());
         string resourceType = paths[0];
         string? resystemServiceEp = resourceComponentRoutes[resourceType];
-        string resourceCtx = "";
+        string resourceCtx = "?";
+        map<string[]> queryParams = req.getQueryParams();
+
         if resystemServiceEp is string {
             if resystemServiceEp.startsWith(resourceServiceUrl) {
                 resystemServiceEp = resystemServiceEp.substring(resourceServiceUrl.length());
             }
-            if paths.length() > 3 {
-                foreach int i in 2 ... paths.length() - 1 {
-                    resourceCtx += string `/${paths[i]}`;
+            if queryParams.length() > 0 {
+                foreach string key in queryParams.keys() {
+                    resourceCtx += string `${key}=${req.getQueryParamValue(key) ?: ""}&`;
                 }
             }
             resystemServiceEp = string `${resystemServiceEp ?: ""}${resourceCtx}`;
